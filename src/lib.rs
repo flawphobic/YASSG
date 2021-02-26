@@ -1,10 +1,18 @@
 use std::env;
-use std::fs;
-use std::io;
-use std::path::PathBuf;
+use std::fs::read_dir;
+//use std::io;
+//use std::path::PathBuf;
 
-fn run() -> String {
-    String::from("")
+pub fn run() -> String {
+    format!("{:?}", read_posts_dir())
+}
+
+fn read_posts_dir() -> Vec<String> {
+    let posts = read_dir(get_posts_dir())
+        .unwrap()
+        .map(|res| String::from(res.unwrap().path().to_str().unwrap()))
+        .collect::<Vec<String>>();
+    posts
 }
 
 fn get_posts_dir() -> String {
@@ -16,10 +24,19 @@ fn get_posts_dir() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
-    fn get_posts_dir() {
-        let mut posts_dir = env::current_dir().unwrap();
-        posts_dir.push("posts");
-        assert_eq!(super::get_posts_dir(), format!("{}", posts_dir.display()));
+    fn runs_fine() {
+        run();
+    }
+
+    #[test]
+    fn get_posts_dir_success() {
+        get_posts_dir();
+    }
+
+    #[test]
+    fn read_posts_dir_success() {
+        read_posts_dir();
     }
 }
