@@ -1,24 +1,30 @@
 use std::env;
 use std::fs::read_dir;
-//use std::io;
+use std::io;
 //use std::path::PathBuf;
 
 pub fn run() -> String {
+    match read_posts_dir() {
+        Ok(posts) => println!("{:?}", posts),
+        Err(e) => println!(
+            "Failed to read your posts directory.\nHere's the error: {}",
+            e
+        ),
+    }
     format!("{:?}", read_posts_dir())
 }
 
-fn read_posts_dir() -> Vec<String> {
-    let posts = read_dir(get_posts_dir())
-        .unwrap()
+fn read_posts_dir() -> Result<Vec<String>, io::Error> {
+    let posts = read_dir(get_posts_dir()?)?
         .map(|res| String::from(res.unwrap().path().to_str().unwrap()))
         .collect::<Vec<String>>();
-    posts
+    Ok(posts)
 }
 
-fn get_posts_dir() -> String {
-    let mut path = env::current_dir().expect("Failed to get posts directory");
+fn get_posts_dir() -> Result<String, io::Error> {
+    let mut path = env::current_dir()?;
     path.push("posts");
-    format!("{}", path.display())
+    Ok(format!("{}", path.display()))
 }
 
 #[cfg(test)]
