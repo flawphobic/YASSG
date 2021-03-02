@@ -1,33 +1,45 @@
 use std::env;
-use std::fs::{create_dir, read_dir};
+use std::fs::{create_dir, read_dir, DirEntry};
 use std::io;
 
-fn create_posts_dir() -> Result<(), io::Error> {
-    // not the best error-handling
-    // requires review
-    match read_posts_dir() {
-        Ok(_) => Ok(()),
-        Err(error) => match error.kind() {
-            io::ErrorKind::NotFound => match create_dir(get_posts_dir()?) {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e),
+// temp test
+pub fn run() {
+    println!("{:#?}", File::read_md_in_posts().unwrap());
+}
+
+struct File;
+
+impl File {
+    fn create_posts_dir() -> Result<(), io::Error> {
+        // not the best error-handling...horrendous to be frank
+        // requires review
+        match File::read_md_in_posts() {
+            Ok(_) => Ok(()),
+            Err(error) => match error.kind() {
+                io::ErrorKind::NotFound => Ok(create_dir(File::get_posts_dir()?)?),
+                err => Err(io::Error::new(err, "Failed to create posts directory")),
             },
-            err => Err(io::Error::new(err, "Failed")),
-        },
+        }
     }
-}
-
-fn read_posts_dir() -> Result<Vec<String>, io::Error> {
-    let posts = read_dir(get_posts_dir()?)?
-        .map(|res| String::from(res.unwrap().path().to_str().unwrap()))
-        .collect::<Vec<String>>();
-    Ok(posts)
-}
-
-fn get_posts_dir() -> Result<String, io::Error> {
-    let mut path = env::current_dir()?;
-    path.push("posts");
-    Ok(format!("{}", path.display()))
+    fn read_md_in_posts() -> Result<Vec<DirEntry>, io::Error> {
+        // modified(?) from https://users.rust-lang.org/t/filtering-file-names-with-ends-with/16939/4
+        let posts = read_dir(File::get_posts_dir()?)?
+            .filter_map(Result::ok)
+            .filter(|f| {
+                if let Some(ext) = f.path().extension() {
+                    ext == "md"
+                } else {
+                    false
+                }
+            })
+            .collect::<Vec<DirEntry>>();
+        Ok(posts)
+    }
+    fn get_posts_dir() -> Result<String, io::Error> {
+        let mut path = env::current_dir()?;
+        path.push("posts");
+        Ok(format!("{}", path.display()))
+    }
 }
 
 #[cfg(test)]

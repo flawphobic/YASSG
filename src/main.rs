@@ -1,6 +1,5 @@
-use ssg_lib::run;
+use ssg_lib::*;
 
 fn main() {
-    run();
-    // println!("{}", run());
+    println!("{:#?}", run());
 }
