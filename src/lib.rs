@@ -1,19 +1,45 @@
 use pulldown_cmark::{html, Parser};
-use std::env;
 use std::fs::{create_dir, read_dir, read_to_string, DirEntry};
 use std::io;
+use std::{env, path::PathBuf};
 
 // temp test
 pub fn run() {
-    println!(
-        "{}",
-        File::parse_markdown_file(&File::list_md_in_posts().unwrap()[0]).unwrap()
-    );
+    println!("{:#?}", File::convert_posts_entries_to_html());
 }
 
 struct File;
 
+#[derive(Debug)]
+struct HTMLFiles {
+    content: String,
+    path: PathBuf,
+}
+
+impl HTMLFiles {
+    fn new(entry: &DirEntry) -> Result<HTMLFiles, io::Error> {
+        let content = match File::parse_markdown_file(entry) {
+            Ok(res) => res,
+            _ => panic!("ws"),
+        };
+        let path = entry.path();
+        Ok(HTMLFiles { content, path })
+    }
+}
+
 impl File {
+    fn convert_posts_entries_to_html() -> Result<Vec<HTMLFiles>, io::Error> {
+        let dir_entries = match File::list_md_in_posts() {
+            Ok(f) => f,
+            Err(e) => return Err(e),
+        };
+
+        let collection = dir_entries
+            .iter()
+            .map(|entry| HTMLFiles::new(entry))
+            .collect();
+        collection
+    }
     // readability is horrendous here
     // requires review
     fn parse_markdown_file(md_file: &DirEntry) -> Result<String, io::Error> {
@@ -26,10 +52,10 @@ impl File {
         let mut html_output = String::new();
         html::push_html(&mut html_output, Parser::new(&file_content));
 
-        println!("{}", html_output);
         Ok(html_output)
     }
 
+    // relevant for cli
     fn create_posts_dir() -> Result<(), io::Error> {
         // not the best error-handling...horrendous to be frank
         // requires review
@@ -57,8 +83,8 @@ impl File {
         Ok(format!("{}", path.display()))
     }
     fn verify_extension(f: &DirEntry, ext: &str) -> bool {
-        if let Some(ext) = f.path().extension() {
-            ext == "md"
+        if let Some(res) = f.path().extension() {
+            res == ext
         } else {
             false
         }
