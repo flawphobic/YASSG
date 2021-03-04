@@ -10,11 +10,11 @@ struct HTMLFiles {
 
 enum CustomError {
     FileError(io::Error),
-    InvalidFileError(&str),
+    InvalidFileError(String),
 }
 
 impl HTMLFiles {
-    fn new(entry: &DirEntry) -> Result<HTMLFiles, io::Error> {
+    fn new(entry: &DirEntry) -> Result<HTMLFiles, CustomError> {
         let content = match parse_markdown_file(entry) {
             Ok(res) => res,
             Err(e) => return Err(e),
@@ -23,10 +23,10 @@ impl HTMLFiles {
         Ok(HTMLFiles { content, path })
     }
 }
-fn convert_posts_entries_to_html() -> Result<Vec<HTMLFiles>, io::Error> {
+fn convert_posts_entries_to_html() -> Result<Vec<HTMLFiles>, CustomError> {
     let dir_entries = match list_md_in_posts() {
         Ok(f) => f,
-        Err(e) => return Err(e),
+        Err(e) => return Err(CustomError::FileError(e)),
     };
 
     let collection = dir_entries
@@ -40,7 +40,11 @@ fn convert_posts_entries_to_html() -> Result<Vec<HTMLFiles>, io::Error> {
 fn parse_markdown_file(md_file: &DirEntry) -> Result<String, CustomError> {
     let file_path = match verify_extension(&md_file, "md") {
         true => md_file.path(),
-        false => return Err(CustomError::InvalidFileError("File extension is not .md")),
+        false => {
+            return Err(CustomError::InvalidFileError(String::from(
+                "File extension is not .md",
+            )))
+        }
     };
 
     let file_content = read_to_string(file_path).expect("Failed to read file");
